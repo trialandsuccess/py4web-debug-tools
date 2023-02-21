@@ -1,4 +1,0 @@
-py4web
-yatl
-pydal
-configurable-json

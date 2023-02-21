@@ -3,8 +3,12 @@ from distutils.core import setup
 with open("README.md") as f:
     long_desc = f.read()
 
-with open("requirements.txt") as f:
-    dependencies = f.read().split("\n")
+dependencies = [
+    "py4web",
+    "yatl",
+    "pydal",
+    "configurable-json"
+]
 
 setup(
     name="py4web-debug-tools",
