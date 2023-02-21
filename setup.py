@@ -7,7 +7,7 @@ dependencies = ["py4web", "yatl", "pydal", "configurable-json"]
 
 setup(
     name="py4web-debug-tools",
-    version="0.1.1",
+    version="0.1.2",
     description="Debug Tools for py4web",
     author="Robin van der Noord",
     author_email="contact@trialandsuccess.nl",
