@@ -104,7 +104,7 @@ class ApiDumpDieError(Exception):
     pass
 
 
-def dd(*data, fancy=True, api=False) -> typing.NoReturn:
+def dd(*data, fancy=True, api=False):
     """
     Dump and Die:
     Show args as JSON an halt the rest of the request

@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import traceback
+import typing
 
 import ombott as bottle
 import yatl
@@ -27,11 +28,14 @@ def custom_error_page(
     color=None,
     message=None,
     traceback="",
-    err_type=None,
+    err_type: str | typing.Type | None = None,
     bare_exception=None,
 ):
-    if not isinstance(err_type, str):
+    if err_type and not isinstance(err_type, str):
         err_type = err_type.__name__
+
+    # make sure the name is a string (but it probably already is:)
+    err_type_name = str(err_type)
 
     if hasattr(Template, "_on_success"):
         # reset here on error, because on_error might not be called!
@@ -67,7 +71,7 @@ def custom_error_page(
         "ApiDumpDieError": None,
     }
 
-    _tmpl = templates.get(err_type, templates["default"])
+    _tmpl = templates.get(err_type_name, templates["default"])
 
     if _tmpl is None:
         # just bare exception

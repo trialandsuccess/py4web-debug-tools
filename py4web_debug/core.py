@@ -1,5 +1,6 @@
 # Transforms janky 'internals' into easy to work with tool
 import os
+import typing
 
 from py4web import DAL as P4WDAL
 
@@ -19,9 +20,9 @@ class DebugTools:
     def enable(
         self,
         db: P4WDAL,
-        enabled: bool = None,
+        enabled: bool | None = None,
         fancy_rendering=True,
-        bar_style="bootstrap",
+        bar_style: typing.Literal["bootstrap"] = "bootstrap",
         slow_threshold_ms=10,
     ):
         """
@@ -30,7 +31,7 @@ class DebugTools:
         @todo: debugbar style (bootstrap/default, bulma, ...)
         """
         if enabled is None:
-            enabled = os.getenv("PY4WEB_DEBUG_MODE", False)
+            enabled = is_debug()
 
         self.db = db
         self.enabled = enabled

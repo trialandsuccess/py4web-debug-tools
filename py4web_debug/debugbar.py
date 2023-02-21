@@ -133,7 +133,7 @@ def debugbar_template(fixture: Fixture, debug_data: dict, fancy=True):
 T = typing.TypeVar("T")
 
 
-def _prune_long_values(value: T) -> T:
+def _prune_long_values(value: T) -> T | str:
     """
     Find the end values in nested dicts and lists and prune them if they are too long,
     Usually (tm) returns the same type as the input (except when the input is long bytes)
@@ -146,7 +146,7 @@ def _prune_long_values(value: T) -> T:
         for key, item in value.items():
             value[key] = _prune_long_values(item)
     elif isinstance(value, str | bytes) and len(value) > 50:
-        value = "[pruned due to length]"
+        return "[pruned due to length]"
 
     return value
 
