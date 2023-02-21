@@ -4,3 +4,4 @@ apps
 build
 dist
 *.egg-info
+.idea

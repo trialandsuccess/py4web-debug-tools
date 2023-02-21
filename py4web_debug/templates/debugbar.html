@@ -1,0 +1,195 @@
+<style>
+    #debug_bar {
+        min-height: 200px;
+        max-height: 500px;
+        width: 100%;
+        background-color: var(--light);
+
+        position: fixed;
+        bottom: 0;
+    }
+
+    #debug_bar.any-size {
+        min-height: 0;
+        max-height: 100vh;
+    }
+
+    .debugbar-content {
+        overflow: scroll;
+        max-height: 500px;
+    }
+
+    .any-size .debugbar-content {
+        max-height: 100vh;
+    }
+
+    #resize {
+        height: 10px;
+        background-color: var(--grey);
+        cursor: ns-resize;
+    }
+
+    .debugbar-queries tr {
+        border-bottom: 1px dotted grey;
+    }
+
+    .close-btn {
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        font-size: 2em;
+        cursor: pointer;
+    }
+
+    #open_debug_bar {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        font-size: 50px;
+    }
+
+    #open_debug_bar i {
+        border: 3px solid black;
+        border-radius: 100%;
+        aspect-ratio: 1;
+        padding: 10px;
+    }
+</style>
+
+
+<div id="debug_bar" style="z-index: 5">
+    <div id="resize"></div>
+    <div class="d-flex align-items-start">
+        <div class="close-btn"
+             _="on click call toggle_debug_bar()"
+        ><i class="fa fa-times"> </i></div>
+
+        <div class="nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <button class="nav-link active" id="v-pills-home-tab" data-bs-toggle="pill" data-bs-target="#v-pills-home"
+                    type="button" role="tab" aria-controls="v-pills-home" aria-selected="true">Data
+            </button>
+            <button class="nav-link" id="v-pills-queries-tab" data-bs-toggle="pill" data-bs-target="#v-pills-queries"
+                    type="button" role="tab" aria-controls="v-pills-queries" aria-selected="false">Queries&nbsp;([[=len(queries)]])
+            </button>
+            <button class="nav-link" id="v-pills-duplicate-queries-tab" data-bs-toggle="pill"
+                    data-bs-target="#v-pills-duplicate-queries"
+                    type="button" role="tab" aria-controls="v-pills-duplicate-queries" aria-selected="false">Duplicate
+                Queries&nbsp;([[=len(duplicate_queries)]])
+            </button>
+            <button class="nav-link" id="v-pills-slow-queries-tab" data-bs-toggle="pill"
+                    data-bs-target="#v-pills-slow-queries"
+                    type="button" role="tab" aria-controls="v-pills-slow-queries" aria-selected="false">Slow Queries&nbsp;([[=len(slow_queries)]])
+            </button>
+            <button class="nav-link" id="v-pills-catch-tab" data-bs-toggle="pill" data-bs-target="#v-pills-catch"
+                    type="button" role="tab" aria-controls="v-pills-catch" aria-selected="false">Catch&nbsp;([[=len(catch)]])
+            </button>
+        </div>
+        <div class="tab-content" id="v-pills-tabContent" style="width: 100%">
+            <div class="debugbar-content debugbar-context tab-pane fade show active" id="v-pills-home" role="tabpanel"
+                 aria-labelledby="v-pills-home-tab">
+
+                <link href="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.css"
+                      rel="stylesheet"/>
+                </head>
+                [[if fancy:]]
+                <!-- no JSON rendering (no 3rd party packages such as jquery required) -->
+                <!-- https://www.jsdelivr.com/package/npm/json-browse?path=json-browse -->
+                <pre id="json-renderer" class="json-body"></pre>
+                <script src="https://code.jquery.com/jquery-3.6.1.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.js"></script>
+                <script>$('#json-renderer').jsonBrowse([[= json_context]]);</script>
+                [[else:]]
+                <pre id="json-renderer" class="json-body">[[=json_context]]</pre>
+                [[pass]]
+            </div>
+            <div class="debugbar-content debugbar-queries tab-pane fade" id="v-pills-queries" role="tabpanel"
+                 aria-labelledby="v-pills-queries-tab">
+
+                <b>
+                    [[total_quries = len(queries)]]
+                    [[unique_queries = len(dict(queries))]]
+                    [[=total_quries]] total queries; [[=unique_queries]] unique queries
+                    -> [[=total_quries -unique_queries]] duplicate queries
+                </b>
+
+                [[=BEAUTIFY(queries)]]
+            </div>
+            <div class="debugbar-content tab-pane fade" id="v-pills-duplicate-queries" role="tabpanel"
+                 aria-labelledby="v-pills-duplicate-queries-tab">
+                <i>
+                    [[total_quries = len(queries)]]
+                    [[unique_queries = len(dict(queries))]]
+                    [[=total_quries]] total queries; [[=unique_queries]] unique queries
+                    -> [[=total_quries -unique_queries]] duplicate queries
+                </i>
+
+                [[=BEAUTIFY(duplicate_queries)]]
+            </div>
+            <div class="debugbar-content tab-pane fade" id="v-pills-slow-queries" role="tabpanel"
+                 aria-labelledby="v-pills-slow-queries-tab">
+                [[=BEAUTIFY(slow_queries)]]
+            </div>
+            <div class="debugbar-content tab-pane fade" id="v-pills-catch" role="tabpanel"
+                 aria-labelledby="v-pills-catch-tab">
+                [[=BEAUTIFY(catch)]]
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="open_debug_bar"
+     style="display: none"
+     _="on click call toggle_debug_bar()"
+>
+    <i class="fa fa-bug-slash"> </i>
+</div>
+
+<script>
+    // https://jsfiddle.net/7dtqbeun/10/
+
+    let m_pos;
+    const resize_el = document.getElementById("resize");
+
+    function resize(e) {
+        const parent = resize_el.parentNode;
+        const dx = m_pos - e.y;
+        m_pos = e.y;
+        parent.style.height = (parseInt(getComputedStyle(parent, '').height) + dx) + "px";
+        // no more size boundaries if user wants to drag the bar around!
+        parent.classList.add('any-size')
+    }
+
+    resize_el.addEventListener("mousedown", function (e) {
+        m_pos = e.y;
+        document.addEventListener("mousemove", resize, false);
+    }, false);
+    document.addEventListener("mouseup", function () {
+        document.removeEventListener("mousemove", resize, false);
+    }, false);
+
+    function toggle_vis(el) {
+        el.style.display === "none" ? el.style.display = "initial" : el.style.display = "none"
+    }
+
+    function rev(bool) {
+        return bool === 'true' ? 'false' : 'true'
+    }
+
+    function toggle_debug_bar(save = true) {
+        const bar = document.querySelector('#debug_bar');
+        const open = document.querySelector('#open_debug_bar');
+        toggle_vis(bar)
+        toggle_vis(open)
+        if (save) {
+            sessionStorage['debug_bar'] = rev(sessionStorage['debug_bar'])
+        }
+    }
+
+    function main() {
+        if (sessionStorage['debug_bar'] === 'false') {
+            toggle_debug_bar(false)
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", main);
+</script>
