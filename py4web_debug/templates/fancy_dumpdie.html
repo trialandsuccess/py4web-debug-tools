@@ -1,0 +1,12 @@
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.css" rel="stylesheet"/>
+</head>
+<body>
+<!-- https://www.jsdelivr.com/package/npm/json-browse?path=json-browse -->
+<pre id="json-renderer" class="json-body"></pre>
+<script src="https://code.jquery.com/jquery-3.6.1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.js"></script>
+<script>$('#json-renderer').jsonBrowse([[= XML(str(exception))]]);</script>
+</body>
+</html>

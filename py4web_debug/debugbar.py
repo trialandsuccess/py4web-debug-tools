@@ -26,14 +26,13 @@ def _fmt_callframe(cf):
 def catch(*context, levels=3, _from=1):
     """
     Log usages of this method
-
-    @todo: if debug is disabled, don't run all this:
     """
     _ = "You should only use catch() while debugging!!!!"
-    warnings.warn(_)
 
     if not is_debug():
-        raise ValueError(_)
+        warnings.warn(_)
+        return  # just do nothing (but warn)
+        # raise ValueError(_)
 
     import inspect
 
@@ -175,10 +174,18 @@ class DebugBar(Fixture):
     queries = []  # mutable but DONT OVERWRITE !!!
     debug_data = {}  # mutable but DON'T OVERWRITE!!
 
-    def __init__(self, db, fancy_rendering=True):
+    def __init__(
+        self,
+        db,
+        fancy_rendering: bool,
+        bar_style: typing.Literal["bootstrap"],
+        slow_threshold_ms: int,
+    ):
         self.__prerequisites__ = [db]
         self.db = db
         self.fancy = fancy_rendering
+        self.style = bar_style
+        self.threshold_ms = slow_threshold_ms
 
     def _find_duplicate_queries(self, timings):
         """
@@ -188,7 +195,7 @@ class DebugBar(Fixture):
 
         return {query: count for query, count in counts.items() if count > 1}
 
-    def _find_slow_queries(self, timings, threshold_ms=2):
+    def _find_slow_queries(self, timings: list[tuple[str, float]], threshold_ms: int):
         """
         Returns: a list of queries that took longer than threshold_ms
         """
@@ -233,7 +240,8 @@ class DebugBar(Fixture):
             self.debug_data["queries"]
         )
         self.debug_data["slow_queries"] = self._find_slow_queries(
-            self.debug_data["queries"]
+            self.debug_data["queries"],
+            threshold_ms=self.threshold_ms
         )
 
         try:

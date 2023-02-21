@@ -4,6 +4,7 @@ import os
 from py4web import DAL as P4WDAL
 
 from .debugbar import DummyDebugBar, DebugBar
+from .env import is_debug
 from .internals import patch_py4
 
 
@@ -13,8 +14,16 @@ class DebugTools:
     enabled = False
     db: P4WDAL
     debug_bar = DummyDebugBar()
+    IS_DEBUG: bool = is_debug()
 
-    def enable(self, db: P4WDAL, enabled: bool = None, fancy_rendering=True):
+    def enable(
+        self,
+        db: P4WDAL,
+        enabled: bool = None,
+        fancy_rendering=True,
+        bar_style="bootstrap",
+        slow_threshold_ms=10,
+    ):
         """
         By default, on_off looks at PY4WEB_DEBUG_MODE in the env
 
@@ -26,12 +35,13 @@ class DebugTools:
         self.db = db
         self.enabled = enabled
 
+        self.IS_DEBUG = enabled
         if enabled:
             patch_py4()
-            self.debug_bar = DebugBar(db, fancy_rendering)
+            self.debug_bar = DebugBar(db, fancy_rendering, bar_style, slow_threshold_ms)
 
             # will change the result of is_debug (hopefully)
-            os.environ['PY4WEB_DEBUG_MODE'] = "1"
+            os.environ["PY4WEB_DEBUG_MODE"] = "1"
         else:
             self.debug_bar = DummyDebugBar()
 

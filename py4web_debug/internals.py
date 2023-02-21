@@ -2,6 +2,7 @@ import functools
 import http.client
 import json
 import logging
+import os
 import re
 import traceback
 
@@ -14,6 +15,7 @@ from py4web.core import (
     error_logger,
     get_error_snapshot,
     REGEX_APPJSON,
+    Template,
 )
 from yatl import XML
 
@@ -30,6 +32,11 @@ def custom_error_page(
 ):
     if not isinstance(err_type, str):
         err_type = err_type.__name__
+
+    if hasattr(Template, "_on_success"):
+        # reset here on error, because on_error might not be called!
+        Template.on_success = Template._on_success
+        del Template._on_success
 
     message = http.client.responses[code].upper() if message is None else message
     color = (
@@ -54,47 +61,27 @@ def custom_error_page(
     # else - return html error-page
 
     templates = {
-        "default": """
-        <html><head><style>body{color:white;text-align: center;background-color:[[=color]];font-family:serif} h1{font-size:6em;margin:16vh 0 8vh 0} h2{font-size:2em;margin:8vh 0} a{color:white;text-decoration:none;font-weight:bold;padding:10px 10px;border-radius:10px;border:2px solid #fff;transition: all .5s ease} a:hover{background:rgba(0,0,0,0.1);padding:10px 30px}</style></head>
-        <body>
-        <h1>[[=code]]</h1>
-        <h2>[[=message]]</h2>
-        [[if button_text:]]<a href="[[=href]]">[[=button_text]]</a>
-        [[pass]]
-        [[if traceback:]]
-        <pre style="padding: 20px; margin-top: 20px; text-align: left; background: black">[[=traceback]]</pre>
-        [[pass]]
-        </body></html>
-        """,
-        "DumpDieError": """
-        <html><body><pre>[[=str(exception)]]</pre></body></html>
-        """,
-        "FancyDumpDieError": """
-        <html><head><link href="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.css" rel="stylesheet"/></head>
-        <body>
-        <!-- https://www.jsdelivr.com/package/npm/json-browse?path=json-browse -->
-        <pre id="json-renderer" class="json-body"></pre>
-        <script src="https://code.jquery.com/jquery-3.6.1.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/json-browse@0.2.0/json-browse/jquery.json-browse.js"></script>
-        <script>$('#json-renderer').jsonBrowse([[=XML(str(exception))]]);</script>
-        </body></html>
-        """,
+        "default": "error_default.html",
+        "DumpDieError": "dumpdie.html",
+        "FancyDumpDieError": "fancy_dumpdie.html",
         "ApiDumpDieError": None,
     }
 
     _tmpl = templates.get(err_type, templates["default"])
 
-    context["XML"] = XML
-
     if _tmpl is None:
         # just bare exception
         return str(context["exception"])
 
-    return yatl.render(
-        _tmpl,
-        context=context,
-        delimiters="[[ ]]",
-    )
+    context["XML"] = XML
+
+    fname = os.path.join(os.path.dirname(__file__), "templates", _tmpl)
+    with open(fname) as f:
+        return yatl.render(
+            stream=f,
+            context=context,
+            delimiters="[[ ]]",
+        )
 
 
 def custom_catch_errors(app_name, func):
