@@ -37,7 +37,7 @@ def catch(*context, levels=3, _from=1):
     import inspect
 
     curframe = inspect.currentframe()
-    calframes = inspect.getouterframes(curframe, 4)[_from: levels + 1]
+    calframes = inspect.getouterframes(curframe, 4)[_from : levels + 1]
 
     cfl = [_fmt_callframe(cf) for cf in calframes]
     print("catch | ", *cfl, "|", *context)
@@ -240,8 +240,7 @@ class DebugBar(Fixture):
             self.debug_data["queries"]
         )
         self.debug_data["slow_queries"] = self._find_slow_queries(
-            self.debug_data["queries"],
-            threshold_ms=self.threshold_ms
+            self.debug_data["queries"], threshold_ms=self.threshold_ms
         )
 
         try:

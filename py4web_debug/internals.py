@@ -8,6 +8,7 @@ import traceback
 import typing
 
 import ombott as bottle
+import py4web.core
 import yatl
 from py4web import action, response, HTTP
 from py4web.core import (
@@ -30,6 +31,7 @@ def custom_error_page(
     traceback="",
     err_type: str | typing.Type | None = None,
     bare_exception=None,
+    renderer=None,
 ):
     if err_type and not isinstance(err_type, str):
         err_type = err_type.__name__
@@ -64,6 +66,9 @@ def custom_error_page(
         return json.dumps(context)
     # else - return html error-page
 
+    if renderer:
+        return renderer(context)
+
     templates = {
         "default": "error_default.html",
         "DumpDieError": "dumpdie.html",
@@ -88,44 +93,55 @@ def custom_error_page(
         )
 
 
-def custom_catch_errors(app_name, func):
-    """Catches and logs errors in an action; also sets request.app_name"""
+def patch_py4(renderer=None):
+    # THIS IS ONLY CALLED ONCE, WHEN tools.enable IS CALLED OR py4web_debug.wsgi IS USED!
 
-    @functools.wraps(func)
-    def wrapper(*func_args, **func_kwargs):
-        try:
-            request.app_name = app_name
-            ret = func(*func_args, **func_kwargs)
-            if isinstance(ret, dict):
-                response.headers["Content-Type"] = "application/json"
-                ret = dumps(ret)
-            return ret
-        except HTTP as http:
-            response.status = http.status
-            response.headers.update(http.headers)
-            return http.body
-        except bottle.HTTPResponse:
-            raise
-        except Exception as e:
-            snapshot = get_error_snapshot()
-            logging.error(snapshot["traceback"])
-            ticket_uuid = error_logger.log(request.app_name, snapshot) or "unknown"
-            response.status = 500
+    def custom_catch_errors(app_name, func):
+        """Catches and logs errors in an action; also sets request.app_name"""
 
-            raise bottle.HTTPResponse(
-                body=custom_error_page(
-                    500,
-                    button_text=ticket_uuid,
-                    href="/_dashboard/ticket/" + ticket_uuid,
-                    traceback=traceback.format_exc(),
-                    err_type=type(e),
-                    bare_exception=e,
-                ),
-                status=500,
-            )
+        # ^ THIS METHOD IS CALLED FOR EVERY ACTION DEFIFINED WITH @action
 
-    return wrapper
+        # v METHOD BELOW IS CALLED ON EVERY ERROR
 
+        @functools.wraps(func)
+        def wrapper(*func_args, **func_kwargs):
+            try:
+                request.app_name = app_name
+                ret = func(*func_args, **func_kwargs)
+                if isinstance(ret, dict):
+                    response.headers["Content-Type"] = "application/json"
+                    ret = dumps(ret)
+                return ret
+            except HTTP as http:
+                response.status = http.status
+                response.headers.update(http.headers)
+                return http.body
+            except bottle.HTTPResponse:
+                raise
+            except Exception as e:
+                snapshot = get_error_snapshot()
+                logging.error(snapshot["traceback"])
+                ticket_uuid = error_logger.log(request.app_name, snapshot) or "unknown"
+                response.status = 500
 
-def patch_py4():
-    action.catch_errors = custom_catch_errors
+                raise bottle.HTTPResponse(
+                    body=custom_error_page(
+                        500,
+                        button_text=ticket_uuid,
+                        href="/_dashboard/ticket/" + ticket_uuid,
+                        traceback=traceback.format_exc(),
+                        err_type=type(e),
+                        bare_exception=e,
+                        renderer=getattr(patch_py4, "renderer", None),
+                    ),
+                    status=500,
+                )
+
+        return wrapper
+
+    # prevent duplicate enabling:
+    if action.catch_errors.__qualname__ == "action.catch_errors":
+        action.catch_errors = custom_catch_errors
+
+    # allows swapping renderer on the fly with tools.set_renderer():
+    patch_py4.renderer = renderer
