@@ -11,13 +11,13 @@ There are two main tools and some helpers that this package provides.
 
 - `tools`:
     - `enable(db: DAL, enabled?: bool,
-    errorpage_enabled?: bool,
-    errorpage_renderer?: Callable,
-    debugbar_enabled?: bool,
-    debugbar_fancy_rendering?: bool,
-    debugbar_style?: "bootstrap",
-    debugbar_slow_threshold_ms?: int,
-    set_env_var?: bool)`:  
+errorpage_enabled?: bool,
+errorpage_renderer?: Callable,
+debugbar_enabled?: bool,
+debugbar_fancy_rendering?: bool,
+debugbar_style?: "bootstrap",
+debugbar_slow_threshold_ms?: int,
+set_env_var?: bool)`:  
       activate or disable the debug tools (add the custom error screen and create the Debug Bar Fixture).  
       The first argument (DAL) is required for the debug bar to collect queries.  
       `enabled` can be used to dynamically turn on/off the debug features.  
@@ -36,6 +36,7 @@ There are two main tools and some helpers that this package provides.
   with NamedTuples, pyDAL Rows, objects with some variation of `as_dict` and more. See `dumping.py:DDJsonEncoder` for
   specifics)
 - `dd(*)`: Show a page with the data passed to this method and halt execution directly.
+- `wsgi`: a patched version of py4web's `wsgi` module, that will enable the modified error page.
 
 ## Example:
 
