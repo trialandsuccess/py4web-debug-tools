@@ -1,0 +1,118 @@
+<style>
+    #debug_bar {
+        min-height: 200px;
+        max-height: 500px;
+        width: 100%;
+        background-color: var(--light);
+
+        position: fixed;
+        bottom: 0;
+    }
+
+    #debug_bar.any-size {
+        min-height: 0;
+        max-height: 100vh;
+    }
+
+    .debugbar-content {
+        overflow: scroll;
+        max-height: 500px;
+    }
+
+    .any-size .debugbar-content {
+        max-height: 100vh;
+    }
+
+    #resize {
+        height: 10px;
+        background-color: var(--grey);
+        cursor: ns-resize;
+    }
+
+    .debugbar-queries tr {
+        border-bottom: 1px dotted grey;
+    }
+
+    .close-btn {
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        font-size: 2em;
+        cursor: pointer;
+    }
+
+    #open_debug_bar {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        font-size: 50px;
+    }
+
+    #open_debug_bar i {
+        border: 3px solid black;
+        border-radius: 100%;
+        aspect-ratio: 1;
+        padding: 10px;
+    }
+</style>
+
+<div id="debug_bar" style="z-index: 5">
+    <div id="resize"></div>
+    [[include]]
+</div>
+<div id="open_debug_bar"
+     style="display: none"
+     onclick="toggle_debug_bar()"
+>
+    <i class="fa fa-bug-slash"> &uarr; </i>
+</div>
+
+<script>
+    // https://jsfiddle.net/7dtqbeun/10/
+
+    let m_pos;
+    const resize_el = document.getElementById("resize");
+
+    function resize(e) {
+        const parent = resize_el.parentNode;
+        const dx = m_pos - e.y;
+        m_pos = e.y;
+        parent.style.height = (parseInt(getComputedStyle(parent, '').height) + dx) + "px";
+        // no more size boundaries if user wants to drag the bar around!
+        parent.classList.add('any-size')
+    }
+
+    resize_el.addEventListener("mousedown", function (e) {
+        m_pos = e.y;
+        document.addEventListener("mousemove", resize, false);
+    }, false);
+    document.addEventListener("mouseup", function () {
+        document.removeEventListener("mousemove", resize, false);
+    }, false);
+
+    function toggle_vis(el) {
+        el.style.display === "none" ? el.style.display = "initial" : el.style.display = "none"
+    }
+
+    function rev(bool) {
+        return bool === 'true' ? 'false' : 'true'
+    }
+
+    function toggle_debug_bar(save = true) {
+        const bar = document.querySelector('#debug_bar');
+        const open = document.querySelector('#open_debug_bar');
+        toggle_vis(bar)
+        toggle_vis(open)
+        if (save) {
+            sessionStorage['debug_bar'] = rev(sessionStorage['debug_bar'])
+        }
+    }
+
+    function main() {
+        if (sessionStorage['debug_bar'] === 'false') {
+            toggle_debug_bar(false)
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", main);
+</script>

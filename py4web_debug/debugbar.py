@@ -37,7 +37,7 @@ def catch(*context, levels=3, _from=1):
     import inspect
 
     curframe = inspect.currentframe()
-    calframes = inspect.getouterframes(curframe, 4)[_from : levels + 1]
+    calframes = inspect.getouterframes(curframe, 4)[_from: levels + 1]
 
     cfl = [_fmt_callframe(cf) for cf in calframes]
     print("catch | ", *cfl, "|", *context)
@@ -52,8 +52,18 @@ def catch(*context, levels=3, _from=1):
     setattr(request, "_catch", c)
 
 
-def _debugbar(data, template="templates/debugbar.html", fancy=True):
-    fname = os.path.join(os.path.dirname(__file__), template)
+STYLES = {
+    "bootstrap4": "bs4",
+    "bootstrap": "bs5",
+    "bootstrap5": "bs5",
+}
+
+T_STYLES = typing.Literal["bootstrap4", "bootstrap", "bootstrap5", "bulma"]
+
+
+def _debugbar(data, style: T_STYLES, fancy=True):
+    _style = STYLES.get(style, style)
+    template = f"debugbar_{_style}.html"
 
     if not data.get("queries"):
         data["queries"] = []
@@ -72,14 +82,16 @@ def _debugbar(data, template="templates/debugbar.html", fancy=True):
 
     data["fancy"] = fancy
 
+    _path = os.path.join(os.path.dirname(__file__), "templates")
     return yatl.render(
-        filename=fname,
+        filename=os.path.join(_path, template),
+        path=_path,
         context={"BEAUTIFY": yatl.BEAUTIFY, **data},
         delimiters="[[ ]]",
     )
 
 
-def render_debugbar(*contexts, fancy=True):
+def render_debugbar(style: T_STYLES, *contexts, fancy=True):
     """
     Contexts should be:
     1. debug data (filled in the Debug Bar Fixture)
@@ -88,10 +100,10 @@ def render_debugbar(*contexts, fancy=True):
     """
 
     debug_data, _, input_data = contexts
-    return _debugbar(debug_data, fancy=fancy) + "</html>"
+    return _debugbar(debug_data, style=style, fancy=fancy) + "</html>"
 
 
-def debugbar_template(fixture: Fixture, debug_data: dict, fancy=True):
+def debugbar_template(fixture: Fixture, debug_data: dict, style: T_STYLES, fancy=True):
     """
     debug_data is reset and filled every request
     """
@@ -117,7 +129,7 @@ def debugbar_template(fixture: Fixture, debug_data: dict, fancy=True):
         if (output := context["output"]) and isinstance(output, str):
             context["output"] = output.replace(
                 "</html>",
-                render_debugbar(debug_data, context, pre_render_output, fancy=fancy),
+                render_debugbar(style, debug_data, context, pre_render_output, fancy=fancy),
             )
 
     def on_success(self, context: dict):
@@ -178,7 +190,7 @@ class DebugBar(Fixture):
         self,
         db,
         fancy_rendering: bool,
-        bar_style: typing.Literal["bootstrap"],
+        bar_style: T_STYLES,
         slow_threshold_ms: int,
     ):
         self.__prerequisites__ = [db]
@@ -217,7 +229,7 @@ class DebugBar(Fixture):
 
         # empty before debug_pydal adds new queries
         # patch the Template.on_success:
-        debugbar_template(self, self.debug_data, fancy=self.fancy)
+        debugbar_template(self, self.debug_data, style=self.style, fancy=self.fancy)
 
     def filter_context(self, input_data: dict):
         """
