@@ -42,9 +42,8 @@ class DebugTools:
     def enable(
         self,
         # general settings:
-        db: P4WDAL,
-        enabled: bool
-        | None = None,  # OVERWRITES errorpage_enabled and debugbar_enabled
+        db: P4WDAL = None,
+        enabled: bool | None = None,  # OVERWRITES errorpage_enabled and debugbar_enabled
         set_env_var: bool = True,
         # error screen settings:
         errorpage_enabled: bool = None,  # value of 'enabled' is used by default
@@ -80,6 +79,8 @@ class DebugTools:
                 patch_py4(errorpage_renderer)
 
             if self.config.debugbar.enabled:
+                if not db:
+                    raise ValueError("`db` variable should be provided when using the debug bar!")
                 self.debug_bar = DebugBar(
                     db,
                     debugbar_fancy_rendering,
