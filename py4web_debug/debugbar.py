@@ -5,11 +5,11 @@ from collections import Counter
 
 import yatl
 from py4web import request
-from py4web.core import Template, Fixture
+from py4web.core import Fixture, Template
 from yatl import XML
 
-from .env import is_debug
 from .dumping import dump
+from .env import is_debug
 
 
 def _fmt_callframe(cf):
@@ -91,7 +91,7 @@ def render_debugbar(*contexts, fancy=True):
     return _debugbar(debug_data, fancy=fancy) + "</html>"
 
 
-def debugbar_template(fixture: Fixture, debug_data: dict, fancy=True):
+def debugbar_template(_: Fixture, debug_data: dict, fancy=True):
     """
     debug_data is reset and filled every request
     """
@@ -105,11 +105,7 @@ def debugbar_template(fixture: Fixture, debug_data: dict, fancy=True):
             # do nothing
             return
 
-        if isinstance(context.get("output"), dict):
-            pre_render_output = context["output"].copy()
-        else:
-            # no data?
-            pre_render_output = {}
+        pre_render_output = context["output"].copy() if isinstance(context.get("output"), dict) else {}
 
         Template._on_success(self, context)
 
@@ -171,8 +167,8 @@ class DummyDebugBar(Fixture):
 
 
 class DebugBar(Fixture):
-    queries = []  # mutable but DONT OVERWRITE !!!
-    debug_data = {}  # mutable but DON'T OVERWRITE!!
+    queries: typing.ClassVar[list[str]] = []  # mutable but DONT OVERWRITE !!!
+    debug_data: typing.ClassVar[dict[str, typing.Any]] = {}  # mutable but DON'T OVERWRITE!!
 
     def __init__(
         self,
@@ -199,13 +195,9 @@ class DebugBar(Fixture):
         """
         Returns: a list of queries that took longer than threshold_ms
         """
-        return [
-            {q: f"{round(t * 1000, 5)}ms"}
-            for q, t in timings
-            if t > threshold_ms / 1000
-        ]
+        return [{q: f"{round(t * 1000, 5)}ms"} for q, t in timings if t > threshold_ms / 1000]
 
-    def on_request(self, context):
+    def on_request(self, _: dict[str, typing.Any]):
         db = self.db
         # these two are scoped to the request
         self.queries.clear()  # DON'T OVERWRITE WITH = [] !!!
@@ -221,7 +213,8 @@ class DebugBar(Fixture):
 
     def filter_context(self, input_data: dict):
         """
-        Returns: a dict with all keys that are not in __ignored and it's values shortened (nested long values are pruned)
+        Returns: a dict with all keys that are not in __ignored \
+         and it's values shortened (nested long values are pruned).
         """
         if not input_data or not isinstance(input_data, dict):
             return {}
@@ -229,25 +222,17 @@ class DebugBar(Fixture):
         __ignored = input_data.get("__ignore", [])
 
         # remove common helper methods etc.
-        return {
-            k: convert_for_debugbar(v)
-            for k, v in input_data.items()
-            if k not in __ignored
-        }
+        return {k: convert_for_debugbar(v) for k, v in input_data.items() if k not in __ignored}
 
     def on_success(self, context):
-        self.debug_data["duplicate_queries"] = self._find_duplicate_queries(
-            self.debug_data["queries"]
-        )
+        self.debug_data["duplicate_queries"] = self._find_duplicate_queries(self.debug_data["queries"])
         self.debug_data["slow_queries"] = self._find_slow_queries(
             self.debug_data["queries"], threshold_ms=self.threshold_ms
         )
 
         try:
-            json_context = dump(
-                self.filter_context(context["output"]), with_headers=False
-            )
-        except:
+            json_context = dump(self.filter_context(context["output"]), with_headers=False)
+        except Exception:
             json_context = "(Something went wrong)"
 
         self.debug_data["json_context"] = XML(json_context)
