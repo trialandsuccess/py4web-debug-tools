@@ -8,16 +8,15 @@ import traceback
 import typing
 
 import ombott as bottle
-import py4web.core
 import yatl
-from py4web import action, response, HTTP
+from py4web import HTTP, action, response
 from py4web.core import (
-    dumps,
-    request,
-    error_logger,
-    get_error_snapshot,
     REGEX_APPJSON,
     Template,
+    dumps,
+    error_logger,
+    get_error_snapshot,
+    request,
 )
 from yatl import XML
 
@@ -45,11 +44,7 @@ def custom_error_page(
         del Template._on_success
 
     message = http.client.responses[code].upper() if message is None else message
-    color = (
-        {"4": "#F44336", "5": "#607D8B"}.get(str(code)[0], "#2196F3")
-        if not color
-        else color
-    )
+    color = color or {"4": "#F44336", "5": "#607D8B"}.get(str(code)[0], "#2196F3")
     context = dict(
         code=code,
         message=message,

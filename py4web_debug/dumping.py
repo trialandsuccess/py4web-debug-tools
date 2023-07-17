@@ -11,7 +11,7 @@ from .env import is_debug
 
 class DDJsonEncoder(ConfigurableJsonEncoder):
     @staticmethod
-    def _default(o):
+    def _default(o) -> str:
         if hasattr(o, "as_list"):
             # note: prefer as_list now as not every Rows may have an id (= default key of as_dict)
             return o.as_list()
@@ -39,7 +39,10 @@ class DDJsonEncoder(ConfigurableJsonEncoder):
         return str(o)
 
     @staticmethod
-    def is_probably_namedtuple(o):
+    def is_probably_namedtuple(o: typing.Any) -> bool:
+        """
+        Try to guess if 'o' is a Named Tuple or something else.
+        """
         return isinstance(o, tuple) and hasattr(o, "_fields")
 
     def rules(self, o, with_default=True) -> JSONRule:
@@ -48,13 +51,9 @@ class DDJsonEncoder(ConfigurableJsonEncoder):
         # NOTE: with_default is (probably) false anyway!!!!
         """
 
-        if self.is_probably_namedtuple(o):
-            _type = typing.NamedTuple
-        else:
-            _type = type(o)
+        _type = typing.NamedTuple if self.is_probably_namedtuple(o) else type(o)
 
-        # other rules:
-        rule = {
+        return {
             # convert set to list
             set: JSONRule(preprocess=lambda o: list(o)),
             # convert namedtuple to dict
@@ -63,13 +62,8 @@ class DDJsonEncoder(ConfigurableJsonEncoder):
             pydal.objects.Rows: JSONRule(preprocess=lambda row: row.as_list()),
         }.get(_type, JSONRule(transform=self._default) if with_default else None)
 
-        # debug: catch but ignore callframes:
-        # catch(o, _type, rule, levels=0)
 
-        return rule
-
-
-def dump(data: typing.Iterable, with_headers=True):
+def dump(data: typing.Iterable, with_headers=True) -> str:
     """
     Helper to json dump some data with custom converter and headers
     """

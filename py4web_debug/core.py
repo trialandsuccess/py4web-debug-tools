@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from py4web import DAL as P4WDAL
 
-from .debugbar import DummyDebugBar, DebugBar
+from .debugbar import DebugBar, DummyDebugBar
 from .env import is_debug
 from .internals import patch_py4
 
