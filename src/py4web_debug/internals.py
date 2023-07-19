@@ -36,7 +36,7 @@ class ContextDict(typing.TypedDict):
     XML: NotRequired[typing.Type[XML]]
 
 
-T_Renderer = typing.Callable[[ContextDict], str]
+T_Renderer = typing.Callable[[ContextDict], str] | typing.Literal[False]
 AnyFunc = typing.Callable[..., typing.Any]
 
 

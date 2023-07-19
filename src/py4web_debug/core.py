@@ -7,10 +7,7 @@ from py4web import DAL as P4WDAL
 
 from .debugbar import DebugBar, DummyDebugBar
 from .env import is_debug
-from .internals import ContextDict, patch_py4
-
-# in: context, out: string
-RendererMethod = typing.Callable[[ContextDict], str]
+from .internals import T_Renderer, patch_py4
 
 
 @dataclass
@@ -47,7 +44,7 @@ class DebugTools:
         set_env_var: bool = True,
         # error screen settings:
         errorpage_enabled: bool = None,  # value of 'enabled' is used by default
-        errorpage_renderer: RendererMethod = None,
+        errorpage_renderer: T_Renderer = None,
         # debugbar settings:
         debugbar_enabled: bool = None,  # value of 'enabled' is used by default
         debugbar_fancy_rendering: bool = True,
@@ -95,7 +92,7 @@ class DebugTools:
         else:
             self.debug_bar = DummyDebugBar()
 
-    def set_renderer(self, cb: RendererMethod) -> None:
+    def set_renderer(self, cb: T_Renderer) -> None:
         # swap the errorpage_renderer
         if not (self.enabled and self.config.errorpage.enabled):
             # do nothing
@@ -106,4 +103,4 @@ class DebugTools:
 
 tools = DebugTools()
 
-__all__ = ["tools", "patch_py4", "ContextDict"]
+__all__ = ["tools", "patch_py4"]
