@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.0 (2023-07-19)
+
+
 ## v1.0.0 (2023-07-17)
 ### Feature
 * **config:** Multiple minor changes: ([`bb14fec`](https://github.com/trialandsuccess/py4web-debug-tools/commit/bb14fec07780826eb7f550cb9c5d0ed24df1f8b3))
