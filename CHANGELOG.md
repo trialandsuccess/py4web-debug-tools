@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.4 (2023-07-19)
+
+
 ## v1.1.3 (2023-07-19)
 ### Fix
 * Error page renderer can also be False (in addition to None or a method) ([`41d33aa`](https://github.com/trialandsuccess/py4web-debug-tools/commit/41d33aae9e307034b2818641c041f1dd6c8364fc))
