@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.2 (2023-07-19)
+### Fix
+* Wrapper can also return an HTTP response! ([`4431d80`](https://github.com/trialandsuccess/py4web-debug-tools/commit/4431d8094162dc9100aab2798571b87e5a076ed4))
+
 ## v1.1.1 (2023-07-19)
 ### Fix
 * Bump `configurable-json` to new typed version ([`52fa55a`](https://github.com/trialandsuccess/py4web-debug-tools/commit/52fa55a3eb0d8e95064ddb9ecae820a2fa229a9a))
