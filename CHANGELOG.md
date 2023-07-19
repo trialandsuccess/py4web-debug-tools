@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.1 (2023-07-19)
+### Fix
+* Bump `configurable-json` to new typed version ([`52fa55a`](https://github.com/trialandsuccess/py4web-debug-tools/commit/52fa55a3eb0d8e95064ddb9ecae820a2fa229a9a))
+
+### Documentation
+* Updated changelog ([`15a9517`](https://github.com/trialandsuccess/py4web-debug-tools/commit/15a9517f149b9bff272306c64165e9e62845e8d0))
+
 ## v1.1.0 (2023-07-19)
 
 Moved to hatch build system.
