@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.3 (2023-07-19)
+### Fix
+* Error page renderer can also be False (in addition to None or a method) ([`41d33aa`](https://github.com/trialandsuccess/py4web-debug-tools/commit/41d33aae9e307034b2818641c041f1dd6c8364fc))
+
 ## v1.1.2 (2023-07-19)
 ### Fix
 * Wrapper can also return an HTTP response! ([`4431d80`](https://github.com/trialandsuccess/py4web-debug-tools/commit/4431d8094162dc9100aab2798571b87e5a076ed4))
