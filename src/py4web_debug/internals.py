@@ -31,7 +31,7 @@ class ContextDict(typing.TypedDict):
     color: typing.Optional[str]
     traceback: str
     err_type: str
-    exception: typing.Optional[Exception]
+    exception: typing.Optional[Exception | str]
 
     XML: NotRequired[typing.Type[XML]]
 
@@ -48,7 +48,7 @@ def custom_error_page(
     message: str = None,
     traceback: str = "",
     err_type: str | typing.Type[Exception] | None = None,
-    bare_exception: Exception = None,
+    bare_exception: Exception | str = None,
     renderer: T_Renderer = None,
 ) -> str:
     if err_type and not isinstance(err_type, str):
