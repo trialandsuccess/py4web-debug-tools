@@ -36,7 +36,12 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["py4web", "yatl", "pydal", "configurable-json"]
+dependencies = [
+    "py4web",
+    "yatl",
+    "pydal",
+    "configurable-json >= 1.1"
+]
 
 
 [project.urls]
