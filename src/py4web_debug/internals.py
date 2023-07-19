@@ -9,6 +9,7 @@ import typing
 
 import ombott as bottle
 import yatl
+from ombott import HTTPResponse
 from py4web import HTTP, action, response
 from py4web.core import (
     REGEX_APPJSON,
@@ -120,18 +121,18 @@ class patch_py4:
             # v METHOD BELOW IS CALLED ON EVERY ERROR
 
             @functools.wraps(func)
-            def wrapper(*func_args: typing.Any, **func_kwargs: typing.Any) -> str:
+            def wrapper(*func_args: typing.Any, **func_kwargs: typing.Any) -> str | HTTPResponse:
                 try:
                     request.app_name = app_name
                     ret = func(*func_args, **func_kwargs)
                     if isinstance(ret, dict):
                         response.headers["Content-Type"] = "application/json"
                         ret = dumps(ret)
-                    return str(ret)
+                    return ret
                 except HTTP as http:
                     response.status = http.status
                     response.headers.update(http.headers)
-                    return str(http.body)
+                    return http.body
                 except bottle.HTTPResponse:
                     raise
                 except Exception as e:
