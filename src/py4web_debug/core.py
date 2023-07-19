@@ -7,10 +7,10 @@ from py4web import DAL as P4WDAL
 
 from .debugbar import DebugBar, DummyDebugBar
 from .env import is_debug
-from .internals import patch_py4
+from .internals import ContextDict, patch_py4
 
 # in: context, out: string
-RendererMethod = typing.Callable[[typing.Dict[str, typing.Any]], str]
+RendererMethod = typing.Callable[[ContextDict], str]
 
 
 @dataclass
@@ -53,7 +53,7 @@ class DebugTools:
         debugbar_fancy_rendering: bool = True,
         debugbar_style: typing.Literal["bootstrap"] = "bootstrap",
         debugbar_slow_threshold_ms: int = 10,
-    ):
+    ) -> None:
         """
         By default, on_off looks at PY4WEB_DEBUG_MODE in the env
 
@@ -68,9 +68,9 @@ class DebugTools:
         self.IS_DEBUG = enabled
 
         self.config = InternalConfig(
-            errorpage=ErrorpageSettings(enabled=errorpage_enabled in (True, None)),
+            errorpage=ErrorpageSettings(enabled=errorpage_enabled in {True, None}),
             # todo: more
-            debugbar=DebugbarSettings(enabled=debugbar_enabled in (True, None)),
+            debugbar=DebugbarSettings(enabled=debugbar_enabled in {True, None}),
             # todo: more
         )
 
@@ -81,6 +81,7 @@ class DebugTools:
             if self.config.debugbar.enabled:
                 if not db:
                     raise ValueError("`db` variable should be provided when using the debug bar!")
+
                 self.debug_bar = DebugBar(
                     db,
                     debugbar_fancy_rendering,
@@ -94,7 +95,7 @@ class DebugTools:
         else:
             self.debug_bar = DummyDebugBar()
 
-    def set_renderer(self, cb: RendererMethod):
+    def set_renderer(self, cb: RendererMethod) -> None:
         # swap the errorpage_renderer
         if not (self.enabled and self.config.errorpage.enabled):
             # do nothing
@@ -104,3 +105,5 @@ class DebugTools:
 
 
 tools = DebugTools()
+
+__all__ = ["tools", "patch_py4", "ContextDict"]

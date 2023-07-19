@@ -9,9 +9,41 @@ from py4web import response
 from .env import is_debug
 
 
+class PossiblyAsDict(typing.Protocol):
+    def as_dict(self) -> dict[str, typing.Any]:
+        ...
+
+    def asdict(self) -> dict[str, typing.Any]:
+        ...
+
+    def _asdict(self) -> dict[str, typing.Any]:
+        ...
+
+    def _as_dict(self) -> dict[str, typing.Any]:
+        ...
+
+    def to_dict(self) -> dict[str, typing.Any]:
+        ...
+
+    def todict(self) -> dict[str, typing.Any]:
+        ...
+
+    def _todict(self) -> dict[str, typing.Any]:
+        ...
+
+    def _to_dict(self) -> dict[str, typing.Any]:
+        ...
+
+    def __json__(self) -> dict[str, typing.Any]:
+        ...
+
+    def as_list(self) -> list[typing.Any]:
+        ...
+
+
 class DDJsonEncoder(ConfigurableJsonEncoder):
     @staticmethod
-    def _default(o) -> str:
+    def _default(o: PossiblyAsDict) -> dict[str, typing.Any] | list[typing.Any] | str:
         if hasattr(o, "as_list"):
             # note: prefer as_list now as not every Rows may have an id (= default key of as_dict)
             return o.as_list()
@@ -45,7 +77,7 @@ class DDJsonEncoder(ConfigurableJsonEncoder):
         """
         return isinstance(o, tuple) and hasattr(o, "_fields")
 
-    def rules(self, o, with_default=True) -> JSONRule:
+    def rules(self, o: typing.Any, with_default: bool = True) -> JSONRule:
         """
         Custom rules for the DD json: set to list and namedtuple to dict
         # NOTE: with_default is (probably) false anyway!!!!
@@ -53,17 +85,25 @@ class DDJsonEncoder(ConfigurableJsonEncoder):
 
         _type = typing.NamedTuple if self.is_probably_namedtuple(o) else type(o)
 
-        return {
+        rules: dict[type, JSONRule] = {
             # convert set to list
             set: JSONRule(preprocess=lambda o: list(o)),
             # convert namedtuple to dict
             typing.NamedTuple: JSONRule(preprocess=self._default),
             pydal.objects.Row: JSONRule(preprocess=lambda row: row.as_dict()),
             pydal.objects.Rows: JSONRule(preprocess=lambda row: row.as_list()),
-        }.get(_type, JSONRule(transform=self._default) if with_default else None)
+        }
+
+        if rule := rules.get(typing.cast(type, _type)):
+            return rule
+        elif rule is None and with_default:
+            return JSONRule(transform=self._default)
+        else:
+            # empty rule:
+            return JSONRule()
 
 
-def dump(data: typing.Iterable, with_headers=True) -> str:
+def dump(data: typing.Iterable[typing.Any], with_headers: bool = True) -> str:
     """
     Helper to json dump some data with custom converter and headers
     """
@@ -98,7 +138,7 @@ class ApiDumpDieError(Exception):
     pass
 
 
-def dd(*data, fancy=True, api=False):
+def dd(*data: typing.Any, fancy: bool = True, api: bool = False) -> None:
     """
     Dump and Die:
     Show args as JSON an halt the rest of the request

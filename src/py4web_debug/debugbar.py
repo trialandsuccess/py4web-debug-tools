@@ -2,17 +2,20 @@ import os
 import typing
 import warnings
 from collections import Counter
+from inspect import FrameInfo
 
 import yatl
 from py4web import request
 from py4web.core import Fixture, Template
+from pydal import DAL
 from yatl import XML
 
+from ._internals import TypedFixture
 from .dumping import dump
 from .env import is_debug
 
 
-def _fmt_callframe(cf):
+def _fmt_callframe(cf: FrameInfo) -> str:
     # 0: frame
     # 1: file
     # 2: lineno
@@ -23,7 +26,7 @@ def _fmt_callframe(cf):
     return f"{filename}:{function}"
 
 
-def catch(*context, levels=3, _from=1):
+def catch(*context: typing.Any, levels: int = 3, _from: int = 1) -> None:
     """
     Log usages of this method
     """
@@ -52,7 +55,7 @@ def catch(*context, levels=3, _from=1):
     setattr(request, "_catch", c)
 
 
-def _debugbar(data, template="templates/debugbar.html", fancy=True):
+def _debugbar(data: dict[str, typing.Any], template: str = "templates/debugbar.html", fancy: bool = True) -> str:
     fname = os.path.join(os.path.dirname(__file__), template)
 
     if not data.get("queries"):
@@ -72,14 +75,15 @@ def _debugbar(data, template="templates/debugbar.html", fancy=True):
 
     data["fancy"] = fancy
 
-    return yatl.render(
+    result = yatl.render(
         filename=fname,
         context={"BEAUTIFY": yatl.BEAUTIFY, **data},
         delimiters="[[ ]]",
     )
+    return typing.cast(str, result)
 
 
-def render_debugbar(*contexts, fancy=True):
+def render_debugbar(*contexts: typing.Any, fancy: bool = True) -> str:
     """
     Contexts should be:
     1. debug data (filled in the Debug Bar Fixture)
@@ -88,10 +92,10 @@ def render_debugbar(*contexts, fancy=True):
     """
 
     debug_data, _, input_data = contexts
-    return _debugbar(debug_data, fancy=fancy) + "</html>"
+    return f"{_debugbar(debug_data, fancy=fancy)}</html>"
 
 
-def debugbar_template(_: Fixture, debug_data: dict, fancy=True):
+def debugbar_template(_: Fixture, debug_data: dict[str, typing.Any], fancy: bool = True) -> None:
     """
     debug_data is reset and filled every request
     """
@@ -100,7 +104,7 @@ def debugbar_template(_: Fixture, debug_data: dict, fancy=True):
         # DON'T overwrite existing _on_success because that will lead to recursion...
         Template._on_success = Template.on_success
 
-    def _on_request(self, context: dict):
+    def _on_request(self: Template, context: dict[str, typing.Any]) -> None:
         if not (context and context.get("output")):
             # do nothing
             return
@@ -116,7 +120,7 @@ def debugbar_template(_: Fixture, debug_data: dict, fancy=True):
                 render_debugbar(debug_data, context, pre_render_output, fancy=fancy),
             )
 
-    def on_success(self, context: dict):
+    def on_success(self: Template, context: dict[str, typing.Any]) -> None:
         try:
             _on_request(self, context)
         finally:
@@ -147,32 +151,26 @@ def _prune_long_values(value: T) -> T | str:
     return value
 
 
-def convert_for_debugbar(value):
+def convert_for_debugbar(value: typing.Any) -> str:
     """
     Returns: a dict or list that can be converted to json
     """
     # deprecated: as dict is now managed by dump()
-    # if hasattr(value, "as_dict"):
-    #     value = value.as_dict()
-    #
-    # elif hasattr(value, "_asdict"):
-    #     value = value._asdict()
 
-    value = _prune_long_values(value)
-    return value
+    return _prune_long_values(value)
 
 
-class DummyDebugBar(Fixture):
+class DummyDebugBar(TypedFixture):
     ...
 
 
-class DebugBar(Fixture):
+class DebugBar(TypedFixture):
     queries: typing.ClassVar[list[str]] = []  # mutable but DONT OVERWRITE !!!
     debug_data: typing.ClassVar[dict[str, typing.Any]] = {}  # mutable but DON'T OVERWRITE!!
 
     def __init__(
         self,
-        db,
+        db: DAL,
         fancy_rendering: bool,
         bar_style: typing.Literal["bootstrap"],
         slow_threshold_ms: int,
@@ -183,7 +181,7 @@ class DebugBar(Fixture):
         self.style = bar_style
         self.threshold_ms = slow_threshold_ms
 
-    def _find_duplicate_queries(self, timings):
+    def _find_duplicate_queries(self, timings: list[tuple[str, float]]) -> dict[str, int]:
         """
         Returns: a dict of queries (+ count as value) that are executed more than once
         """
@@ -191,13 +189,13 @@ class DebugBar(Fixture):
 
         return {query: count for query, count in counts.items() if count > 1}
 
-    def _find_slow_queries(self, timings: list[tuple[str, float]], threshold_ms: int):
+    def _find_slow_queries(self, timings: list[tuple[str, float]], threshold_ms: int) -> list[dict[str, str]]:
         """
         Returns: a list of queries that took longer than threshold_ms
         """
         return [{q: f"{round(t * 1000, 5)}ms"} for q, t in timings if t > threshold_ms / 1000]
 
-    def on_request(self, _: dict[str, typing.Any]):
+    def on_request(self, _: dict[str, typing.Any]) -> None:
         db = self.db
         # these two are scoped to the request
         self.queries.clear()  # DON'T OVERWRITE WITH = [] !!!
@@ -211,7 +209,7 @@ class DebugBar(Fixture):
         # patch the Template.on_success:
         debugbar_template(self, self.debug_data, fancy=self.fancy)
 
-    def filter_context(self, input_data: dict):
+    def filter_context(self, input_data: dict[str, typing.Any]) -> dict[str, str]:
         """
         Returns: a dict with all keys that are not in __ignored \
          and it's values shortened (nested long values are pruned).
@@ -224,7 +222,7 @@ class DebugBar(Fixture):
         # remove common helper methods etc.
         return {k: convert_for_debugbar(v) for k, v in input_data.items() if k not in __ignored}
 
-    def on_success(self, context):
+    def on_success(self, context: dict[str, typing.Any]) -> None:
         self.debug_data["duplicate_queries"] = self._find_duplicate_queries(self.debug_data["queries"])
         self.debug_data["slow_queries"] = self._find_slow_queries(
             self.debug_data["queries"], threshold_ms=self.threshold_ms
