@@ -22,6 +22,8 @@ from py4web.core import (
 from typing_extensions import NotRequired
 from yatl import XML
 
+from .types import ErrorSnapshot
+
 
 class ContextDict(typing.TypedDict):
     code: int
@@ -48,7 +50,7 @@ def custom_error_page(
     message: str = None,
     traceback: str = "",
     err_type: str | typing.Type[Exception] | None = None,
-    bare_exception: Exception | str = None,
+    bare_exception: typing.Optional[Exception | str] = None,
     renderer: T_Renderer = None,
 ) -> str:
     if err_type and not isinstance(err_type, str):
@@ -108,11 +110,19 @@ def custom_error_page(
     return typing.cast(str, result)
 
 
+def default_error_logger(snapshot: ErrorSnapshot) -> None:
+    logging.error(snapshot["traceback"])
+
+
+T_Logger = typing.Callable[[ErrorSnapshot], None]
+
+
 class patch_py4:
     # THIS IS ONLY CALLED ONCE, WHEN tools.enable IS CALLED OR py4web_debug.wsgi IS USED!
     renderer: T_Renderer | None = None
+    logger: T_Logger | None = None
 
-    def __init__(self, renderer: T_Renderer = None):
+    def __init__(self, renderer: T_Renderer = None, logger: T_Logger = None):
         def custom_catch_errors(app_name: str, func: AnyFunc) -> typing.Callable[..., str]:
             """Catches and logs errors in an action; also sets request.app_name"""
 
@@ -136,14 +146,16 @@ class patch_py4:
                 except bottle.HTTPResponse:
                     raise
                 except Exception as e:
+                    err_code = 500
                     snapshot = get_error_snapshot()
-                    logging.error(snapshot["traceback"])
+                    (self.logger or default_error_logger)(snapshot)
+
                     ticket_uuid = error_logger.log(request.app_name, snapshot) or "unknown"
-                    response.status = 500
+                    response.status = err_code
 
                     raise bottle.HTTPResponse(
                         body=custom_error_page(
-                            500,
+                            err_code,
                             button_text=ticket_uuid,
                             href=f"/_dashboard/ticket/{ticket_uuid}",
                             traceback=tb.format_exc(),
@@ -162,3 +174,5 @@ class patch_py4:
 
         # allows swapping renderer on the fly with tools.set_renderer():
         patch_py4.renderer = renderer
+        _logger = getattr(patch_py4, "logger", None) or logger
+        patch_py4.logger = staticmethod(_logger) if _logger else None

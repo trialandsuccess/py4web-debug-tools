@@ -7,7 +7,7 @@ from py4web import DAL as P4WDAL
 
 from .debugbar import DebugBar, DummyDebugBar
 from .env import is_debug
-from .internals import T_Renderer, patch_py4
+from .internals import T_Logger, T_Renderer, patch_py4
 
 
 @dataclass
@@ -45,6 +45,7 @@ class DebugTools:
         # error screen settings:
         errorpage_enabled: bool = None,  # value of 'enabled' is used by default
         errorpage_renderer: T_Renderer = None,
+        error_logger: T_Logger = None,
         # debugbar settings:
         debugbar_enabled: bool = None,  # value of 'enabled' is used by default
         debugbar_fancy_rendering: bool = True,
@@ -53,8 +54,6 @@ class DebugTools:
     ) -> None:
         """
         By default, on_off looks at PY4WEB_DEBUG_MODE in the env
-
-        @todo: debugbar style (bootstrap/default, bulma, ...)
         """
         if enabled is None:
             enabled = is_debug()
@@ -73,7 +72,7 @@ class DebugTools:
 
         if enabled:
             if self.config.errorpage.enabled:
-                patch_py4(errorpage_renderer)
+                patch_py4(errorpage_renderer, error_logger)
 
             if self.config.debugbar.enabled:
                 if not db:
