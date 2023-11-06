@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.0 (2023-11-06)
+### Feature
+* Allow custom `error_logger` for tools.enable ([`a8301bc`](https://github.com/trialandsuccess/py4web-debug-tools/commit/a8301bc1762984fc5af420075acdc09e97bcc378))
+
 ## v1.1.4 (2023-07-19)
 
 
