@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.2 (2024-11-20)
+
+### Fix
+
+* Replace 'self' with 'patch_py4' for better stability ([`6987942`](https://github.com/trialandsuccess/py4web-debug-tools/commit/6987942347b993cf767166b6f3dac90e75989130))
+
 ## v1.2.1 (2024-11-20)
 
 ### Fix
