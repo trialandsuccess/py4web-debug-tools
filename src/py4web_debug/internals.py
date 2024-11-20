@@ -122,7 +122,8 @@ class patch_py4:
     renderer: T_Renderer | None = None
     logger: T_Logger | typing.Literal[False] | None = None
 
-    def __init__(self, renderer: T_Renderer = None, logger: T_Logger | bool | None = None):
+    def __init__(_, renderer: T_Renderer = None, logger: T_Logger | bool | None = None):
+        # note: don't use self, use patch_py4 instead
         if logger is True:
             # use default logger:
             logger = None
@@ -152,10 +153,10 @@ class patch_py4:
                 except Exception as e:
                     err_code = 500
                     snapshot = get_error_snapshot()
-                    if self.logger is not False:
+                    if patch_py4.logger is not False:
                         # False - don't log
                         # None - default logger
-                        (self.logger or default_error_logger)(snapshot)
+                        (patch_py4.logger or default_error_logger)(snapshot)
 
                     ticket_uuid = error_logger.log(request.app_name, snapshot) or "unknown"
                     response.status = err_code
@@ -182,4 +183,4 @@ class patch_py4:
         # allows swapping renderer on the fly with tools.set_renderer():
         patch_py4.renderer = renderer
         _logger = getattr(patch_py4, "logger", None) or logger
-        patch_py4.logger = staticmethod(_logger) if _logger else None
+        patch_py4.logger = staticmethod(_logger) if callable(_logger) else _logger
