@@ -120,9 +120,13 @@ T_Logger = typing.Callable[[ErrorSnapshot], None]
 class patch_py4:
     # THIS IS ONLY CALLED ONCE, WHEN tools.enable IS CALLED OR py4web_debug.wsgi IS USED!
     renderer: T_Renderer | None = None
-    logger: T_Logger | None = None
+    logger: T_Logger | typing.Literal[False] | None = None
 
-    def __init__(self, renderer: T_Renderer = None, logger: T_Logger = None):
+    def __init__(self, renderer: T_Renderer = None, logger: T_Logger | bool | None = None):
+        if logger is True:
+            # use default logger:
+            logger = None
+
         def custom_catch_errors(app_name: str, func: AnyFunc) -> typing.Callable[..., str]:
             """Catches and logs errors in an action; also sets request.app_name"""
 
@@ -148,7 +152,10 @@ class patch_py4:
                 except Exception as e:
                     err_code = 500
                     snapshot = get_error_snapshot()
-                    (self.logger or default_error_logger)(snapshot)
+                    if self.logger is not False:
+                        # False - don't log
+                        # None - default logger
+                        (self.logger or default_error_logger)(snapshot)
 
                     ticket_uuid = error_logger.log(request.app_name, snapshot) or "unknown"
                     response.status = err_code

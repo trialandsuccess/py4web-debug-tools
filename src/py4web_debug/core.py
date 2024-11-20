@@ -45,7 +45,8 @@ class DebugTools:
         # error screen settings:
         errorpage_enabled: bool = None,  # value of 'enabled' is used by default
         errorpage_renderer: T_Renderer = None,
-        error_logger: T_Logger = None,
+        # can be set to False to disable (e.g. when using PY4WEB_ERRORLOG: ":stderr"):
+        error_logger: T_Logger | typing.Literal[False] | None = None,
         # debugbar settings:
         debugbar_enabled: bool = None,  # value of 'enabled' is used by default
         debugbar_fancy_rendering: bool = True,

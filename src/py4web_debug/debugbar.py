@@ -160,8 +160,7 @@ def convert_for_debugbar(value: typing.Any) -> str:
     return _prune_long_values(value)
 
 
-class DummyDebugBar(TypedFixture):
-    ...
+class DummyDebugBar(TypedFixture): ...
 
 
 class DebugBar(TypedFixture):
