@@ -1,5 +1,7 @@
+import ast
 import json
 import sys
+import traceback
 import typing
 
 import pydal.objects
@@ -152,3 +154,40 @@ def dd(*data: typing.Any, fancy: bool = True, api: bool = False) -> None:
         raise FancyDumpDieError(_json)
     else:
         raise DumpDieError(_json)
+
+
+T = typing.TypeVar("T")
+
+
+def dbg(value: T) -> T:
+    """
+    Helper inspired by Rust's `dbg!`.
+
+    Prints out the file, line, variable name, type and value.
+    Also returns the original value.
+    """
+    value_type = type(value).__name__
+
+    frame = traceback.extract_stack()[-2]  # Get caller frame info
+    file_name = frame.filename.split("/")[-1]
+    line_number = frame.lineno
+
+    try:
+        with open(frame.filename, "r") as f:
+            source_code = f.readlines()
+
+        line = source_code[line_number - 1].strip()
+        tree = ast.parse(line)
+
+        var_name = None
+        if isinstance(tree, ast.Module) and isinstance(tree.body[0], ast.Expr):
+            call = tree.body[0].value
+            if isinstance(call, ast.Call) and call.func.id == "dbg":
+                var_name = ast.unparse(call.args[0])  # Extract the first argument as a string
+
+    except Exception:
+        var_name = "?"
+
+    print(f"[{file_name}:{line_number}] {value_type}({var_name}) = {value}", file=sys.stderr)
+
+    return value
