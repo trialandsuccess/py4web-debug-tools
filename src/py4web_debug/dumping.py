@@ -1,8 +1,10 @@
 import ast
+import inspect
 import json
 import sys
 import traceback
 import typing
+from types import FrameType
 
 import pydal.objects
 from configurablejson import ConfigurableJsonEncoder, JSONRule
@@ -159,35 +161,130 @@ def dd(*data: typing.Any, fancy: bool = True, api: bool = False) -> None:
 T = typing.TypeVar("T")
 
 
+def _extract_dbg_variable_name(frame: FrameType) -> str:
+    # Read the full source of the caller file
+    with open(frame.f_code.co_filename, "r", encoding="utf-8") as f:
+        source_code = f.readlines()
+
+    # Extract the relevant lines (handle multiline statements)
+    full_source = ""
+    line_number = frame.f_lineno - 1
+    while line_number < len(source_code):
+        full_source += source_code[line_number].strip()
+        if full_source.count("(") == full_source.count(")"):  # Ensure all parentheses are closed
+            break
+        line_number += 1
+
+    # Parse the AST
+    tree = ast.parse(full_source)
+
+    # Find the relevant call in the AST
+    var_name = ""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            call = node.value
+            while isinstance(call, ast.Call):  # Handle nested function calls
+                if hasattr(call.func, "id") and call.func.id == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                elif isinstance(call.func, ast.Attribute) and call.func.attr == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                call = call.args[0] if call.args else None
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+            call = node.value
+            while isinstance(call, ast.Call):  # Handle assignments with nested calls
+                if hasattr(call.func, "id") and call.func.id == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                elif isinstance(call.func, ast.Attribute) and call.func.attr == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                call = call.args[0] if call.args else None
+        elif isinstance(node, ast.Return) and isinstance(node.value, ast.Call):
+            call = node.value
+            while isinstance(call, ast.Call):  # Handle return dbg(x)
+                if hasattr(call.func, "id") and call.func.id == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                elif isinstance(call.func, ast.Attribute) and call.func.attr == "dbg":
+                    var_name = ast.unparse(call.args[0])
+                    break
+                call = call.args[0] if call.args else None
+        elif isinstance(node, ast.keyword) and isinstance(node.value, ast.Call):
+            # Handle function keyword arguments like some_func(arg=dbg("arg"))
+            call = node.value
+            if hasattr(call.func, "id") and call.func.id == "dbg":
+                var_name = ast.unparse(call.args[0])
+                break
+            elif isinstance(call.func, ast.Attribute) and call.func.attr == "dbg":
+                var_name = ast.unparse(call.args[0])
+                break
+
+    return var_name
+
+
+def extract_dbg_variable_name(frame: FrameType) -> typing.Optional[str]:
+    """
+    Extracts the variable name passed to dbg() from the source code.
+    Handles multiline statements, assignments, function arguments, and return values.
+    """
+    try:
+        return _extract_dbg_variable_name(frame)
+    except Exception:
+        return None
+
+
 def dbg(value: T) -> T:
     """
-    Helper inspired by Rust's `dbg!`.
+    Improved Rust-like dbg function that captures variable names even in assignments,
+    namespaced calls, and nested function calls.
+    Handles multiline calls, function arguments, and return statements.
 
-    Prints out the file, line, variable name, type and value.
-    Also returns the original value.
+    Examples:
+
+        ```
+        def handle(_):
+            ...
+
+        def my_decorator(fn): return fn
+
+        @my_decorator
+        def some_func(arg):
+            return dbg("hello")
+
+
+        dbg('hi')
+        y = dbg('hi')
+        py4web_debug.dbg('hi')
+        z = py4web_debug.dbg('hi')
+
+        handle(dbg('hi'))
+        handle(py4web_debug.dbg('hi'))
+
+        some_long_expression = " 3 + 123"
+
+        handle(
+            dbg(
+                (
+                    some_long_expression +
+                    some_long_expression
+                )
+            )
+        )
+
+        some_func(arg=dbg("arg1"))
+        ```
     """
     value_type = type(value).__name__
 
-    frame = traceback.extract_stack()[-2]  # Get caller frame info
-    file_name = frame.filename.split("/")[-1]
-    line_number = frame.lineno
+    # Get the caller's frame
+    frame = inspect.currentframe().f_back
+    frame_info = inspect.getframeinfo(frame)
+    file_name = frame_info.filename.split("/")[-1]
+    line_number = frame_info.lineno
 
-    try:
-        with open(frame.filename, "r") as f:
-            source_code = f.readlines()
-
-        line = source_code[line_number - 1].strip()
-        tree = ast.parse(line)
-
-        var_name = None
-        if isinstance(tree, ast.Module) and isinstance(tree.body[0], ast.Expr):
-            call = tree.body[0].value
-            if isinstance(call, ast.Call) and call.func.id == "dbg":
-                var_name = ast.unparse(call.args[0])  # Extract the first argument as a string
-
-    except Exception:
-        var_name = "?"
+    var_name = extract_dbg_variable_name(frame) or "?"
 
     print(f"[{file_name}:{line_number}] {value_type}({var_name}) = {value}", file=sys.stderr)
-
     return value

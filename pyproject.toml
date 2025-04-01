@@ -40,7 +40,8 @@ dependencies = [
     "py4web",
     "yatl",
     "pydal",
-    "configurable-json >= 1.1"
+    "configurable-json >= 1.1",
+    "typing-extensions",
 ]
 
 
