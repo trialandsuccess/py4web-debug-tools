@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.1 (2025-04-01)
+
+### Fix
+
+* **dbg:** Detect more variable names ([`a80556c`](https://github.com/trialandsuccess/py4web-debug-tools/commit/a80556c2d35f89a5c0f900518074b7800dfeb844))
+
 ## v1.3.0 (2025-04-01)
 
 ### Feature
