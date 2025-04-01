@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.0 (2025-04-01)
+
+### Feature
+
+* Add `dbg` helper ([`b7529e3`](https://github.com/trialandsuccess/py4web-debug-tools/commit/b7529e32bcaa88a237fa505d26afe3f013d0bdf2))
+
 ## v1.2.2 (2024-11-20)
 
 ### Fix
