@@ -2,7 +2,6 @@ import ast
 import inspect
 import json
 import sys
-import traceback
 import typing
 from types import FrameType
 

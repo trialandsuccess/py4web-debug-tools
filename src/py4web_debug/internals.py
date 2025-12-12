@@ -1,6 +1,5 @@
 import functools
 import http.client
-import json
 import logging
 import os
 import re
@@ -14,7 +13,6 @@ from py4web import HTTP, action, response
 from py4web.core import (
     REGEX_APPJSON,
     Template,
-    dumps,
     error_logger,
     get_error_snapshot,
     request,
@@ -22,6 +20,7 @@ from py4web.core import (
 from typing_extensions import NotRequired
 from yatl import XML
 
+from .dumping import dump
 from .types import ErrorSnapshot
 
 
@@ -79,7 +78,7 @@ def custom_error_page(
     # if client accepts 'application/json' - return json
     if re.search(REGEX_APPJSON, request.headers.get("accept", "")):
         response.status = code
-        return json.dumps(context)
+        return dump(context)
     # else - return html error-page
 
     if renderer:
@@ -142,7 +141,7 @@ class patch_py4:
                     ret = func(*func_args, **func_kwargs)
                     if isinstance(ret, dict):
                         response.headers["Content-Type"] = "application/json"
-                        ret = dumps(ret)
+                        ret = dump(ret)
                     return ret
                 except HTTP as http:
                     response.status = http.status
