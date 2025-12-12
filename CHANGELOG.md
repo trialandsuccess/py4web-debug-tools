@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.2 (2025-12-12)
+
+### Fix
+
+* Use existing debug-tools `dump` instead of py4web's `dumps`, hopefully to prevent circular import error ([`0d5afad`](https://github.com/trialandsuccess/py4web-debug-tools/commit/0d5afad2904834cf80d9252b89816b7ae360249a))
+
 ## v1.3.1 (2025-04-01)
 
 ### Fix
