@@ -4,6 +4,10 @@
 
 ## v1.3.3 (2026-08-06)
 
+### Fix
+
+* Fix JSON dumping for TypeDAL model classes and DotMap-like objects whose dynamic attribute lookup makes hasattr()
+  return misleading results. ([PR 2](https://github.com/trialandsuccess/py4web-debug-tools/pull/2))
 
 
 ## v1.3.2 (2025-12-12)
