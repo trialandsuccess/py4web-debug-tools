@@ -37,31 +37,30 @@ class PossiblyAsDict(typing.Protocol):
 class DDJsonEncoder(ConfigurableJsonEncoder):
     @staticmethod
     def _default(o: PossiblyAsDict) -> dict[str, typing.Any] | list[typing.Any] | str:
-        if hasattr(o, "as_list"):
+        # note: getattr with default rather than setattr because setattr might lie and produce None
+        if getattr(o, "as_list", None):
             # note: prefer as_list now as not every Rows may have an id (= default key of as_dict)
             return o.as_list()
-        # more as list stuff?
-
-        if hasattr(o, "as_dict"):
+        elif getattr(o, "as_dict", None):
             return o.as_dict()
-        elif hasattr(o, "asdict"):
+        elif getattr(o, "asdict", None):
             return o.asdict()
-        elif hasattr(o, "_asdict"):
+        elif getattr(o, "_asdict", None):
             return o._asdict()
-        elif hasattr(o, "_as_dict"):
+        elif getattr(o, "_as_dict", None):
             return o._as_dict()
-        elif hasattr(o, "to_dict"):
+        elif getattr(o, "to_dict", None):
             return o.to_dict()
-        elif hasattr(o, "todict"):
+        elif getattr(o, "todict", None):
             return o.todict()
-        elif hasattr(o, "_todict"):
+        elif getattr(o, "_todict", None):
             return o._todict()
-        elif hasattr(o, "_to_dict"):
+        elif getattr(o, "_to_dict", None):
             return o._to_dict()
-        elif hasattr(o, "__json__"):
+        elif getattr(o, "__json__", None):
             return o.__json__()
-
-        return str(o)
+        else:
+            return str(o)
 
     @staticmethod
     def is_probably_namedtuple(o: typing.Any) -> bool:
