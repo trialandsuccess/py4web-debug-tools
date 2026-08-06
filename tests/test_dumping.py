@@ -1,9 +1,10 @@
 from types import SimpleNamespace
 
+import pytest
 from dotmap import DotMap
 from pytest import MonkeyPatch
 
-from src.py4web_debug.dumping import DDJsonEncoder, DumpDieError, dd, dump
+from src.py4web_debug.dumping import DDJsonEncoder, DumpDieError, DumpSerializationError, dd, dump
 
 
 def _sample_dotmap() -> DotMap:
@@ -97,3 +98,23 @@ def test_dump_reproduces_as_list_crash_without_dotmap():
 
     entry2 = SimpleNamespace(label="Aanbod beheren", model=Offering)
     dump(entry2, with_headers=False)
+
+
+def test_dump_wraps_unexpected_errors_with_context():
+    """
+    Force *some other* JSON-serialization failure (a plain circular reference,
+    nothing to do with DotMap/permissive __getattr__) to prove dump() wraps
+    whatever goes wrong with a nicer, actionable error instead of leaking a
+    bare exception from deep inside json.dumps()/DDJsonEncoder.
+    """
+    circular: dict = {}
+    circular["self"] = circular
+
+    with pytest.raises(DumpSerializationError) as exc_info:
+        dump(circular, with_headers=False)
+
+    err = exc_info.value
+    assert "could not JSON-serialize" in str(err)
+    assert "dict" in str(err)  # names the top-level type that was being dumped
+    assert isinstance(err.__cause__, ValueError)  # original error is preserved/chained
+    assert "circular" in str(err.__cause__).lower()

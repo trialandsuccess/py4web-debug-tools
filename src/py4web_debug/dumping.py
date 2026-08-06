@@ -102,8 +102,30 @@ def dump(data: typing.Iterable[typing.Any], with_headers: bool = True) -> str:
     if with_headers:
         response.headers["Content-Type"] = "application/json"
 
-    return json.dumps(data, indent=2, cls=DDJsonEncoder)
-    # return json.dumps(data, indent=2, default=DDJsonEncoder._default)
+    try:
+        return json.dumps(data, indent=2, cls=DDJsonEncoder)
+        # return json.dumps(data, indent=2, default=DDJsonEncoder._default)
+    except Exception as e:
+        raise DumpSerializationError(data, e) from e
+
+
+class DumpSerializationError(TypeError):
+    """
+    Raised by dump() when the data (or something nested inside it) could not be
+    JSON-serialized, even with DDJsonEncoder's custom object-to-dict fallback rules.
+
+    Wraps the original error (still available via `__cause__`/`.original`) with
+    context about what was being dumped, so this is actionable instead of a bare
+    stdlib error surfacing from deep inside json.dumps()/DDJsonEncoder internals.
+    """
+
+    def __init__(self, data: typing.Any, original: Exception) -> None:
+        self.data = data
+        self.original = original
+        super().__init__(
+            f"dump() could not JSON-serialize this data (top-level type: {type(data).__name__}): "
+            f"{original.__class__.__name__}: {original}"
+        )
 
 
 class DumpDieError(Exception):
