@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.4 (2026-08-06)
+
+### Fix
+
+* Improved error message if json failed to `dump()` ([`920b786`](https://github.com/trialandsuccess/py4web-debug-tools/commit/920b78685cfc89cf27269972326562da7c4d05f6))
+
 ## v1.3.3 (2026-08-06)
 
 ### Fix
