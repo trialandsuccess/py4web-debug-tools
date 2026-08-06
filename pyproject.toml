@@ -54,6 +54,8 @@ Source = "https://github.com/trialandsuccess/py4web-debug-tools"
 dev = [
     "su6[all]",
     "hatch",
+    "pytest",
+    "dotmap",
 ]
 
 
@@ -68,6 +70,10 @@ upload_to_repository = false
 upload_to_release = false
 build_command = "hatch build"
 
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.su6]
 directory = "src"
