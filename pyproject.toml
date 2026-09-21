@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.12.4,<0.13"]
+build-backend = "uv_build"
 
 [template.plugins.default]
 src-layout = true
@@ -8,17 +8,11 @@ src-layout = true
 [tool.setuptools.package-data]
 "py4web_debug" = ["py.typed"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/py4web_debug"]
-
-[tool.hatch.build]
-artifacts = [
-    "src/py4web_debug/templates/*.html"
-]
+[tool.uv.build-backend]
+module-name = "py4web_debug"
 
 [project]
 name = "py4web-debug-tools"
-dynamic = ["version"]
 description = 'Debug Tools for py4web'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -44,6 +38,7 @@ dependencies = [
     "configurable-json >= 1.1",
     "typing-extensions",
 ]
+version = "1.3.4"
 
 
 [project.urls]
@@ -54,23 +49,56 @@ Source = "https://github.com/trialandsuccess/py4web-debug-tools"
 [project.optional-dependencies]
 dev = [
     "su6[all]",
-    "hatch",
     "pytest",
     "dotmap",
 ]
 
 
-[tool.hatch.version]
-path = "src/py4web_debug/__about__.py"
+[tool.vommit]
+allow_breaking_bang = true
+allow_breaking_footer = true
+prerelease_token = "beta"
+confirm = true
+ignore = []
 
-[tool.semantic_release]
+[tool.vommit.git]
+enabled = true
+origin = "origin"
 branch = "master"
-version_variable = "src/py4web_debug/__about__.py:__version__"
-change_log = "CHANGELOG.md"
-upload_to_repository = false
-upload_to_release = false
-build_command = "hatch build"
+on_wrong_branch = "error"
+tag_format = "v{version}"
+commit_format = "{version}"
 
+[tool.vommit.changelog]
+enabled = true
+file = "CHANGELOG.md"
+include_prereleases = false
+placeholder = "<!--next-version-placeholder-->"
+placeholder_regex = "<auto>"
+entry_title_format = "## v{version} ({date:%Y-%m-%d})"
+
+[tool.vommit.changelog.levels]
+feat = "Feature{s}"
+fix = "Fix{es}"
+break = "Breaking Change{s}"
+docs = "Documentation"
+perf = "Performance"
+
+[tool.vommit.pypi]
+enabled = true
+use_keyring = true
+
+[tool.vommit.commands]
+clean = "rm -rf ./dist"
+build = "uv build"
+publish = "uv publish"
+post_publish = ""
+
+[tool.vommit.version_bump_map]
+break = "major"
+feat = "minor"
+fix = "patch"
+perf = "patch"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
