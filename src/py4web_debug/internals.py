@@ -51,6 +51,7 @@ def custom_error_page(
     err_type: str | typing.Type[Exception] | None = None,
     bare_exception: typing.Optional[Exception | str] = None,
     renderer: T_Renderer = None,
+    json_renderer: T_Renderer = None,
 ) -> str:
     if err_type and not isinstance(err_type, str):
         err_type = err_type.__name__
@@ -78,6 +79,10 @@ def custom_error_page(
     # if client accepts 'application/json' - return json
     if re.search(REGEX_APPJSON, request.headers.get("accept", "")):
         response.status = code
+        response.headers["Content-Type"] = "application/json"
+        if json_renderer:
+            return json_renderer(context)
+
         return dump(context)
     # else - return html error-page
 
@@ -119,9 +124,12 @@ T_Logger = typing.Callable[[ErrorSnapshot], None]
 class patch_py4:
     # THIS IS ONLY CALLED ONCE, WHEN tools.enable IS CALLED OR py4web_debug.wsgi IS USED!
     renderer: T_Renderer | None = None
+    json_renderer: T_Renderer | None = None
     logger: T_Logger | typing.Literal[False] | None = None
 
-    def __init__(_, renderer: T_Renderer = None, logger: T_Logger | bool | None = None):
+    def __init__(
+        _, renderer: T_Renderer = None, logger: T_Logger | bool | None = None, json_renderer: T_Renderer = None
+    ):
         # note: don't use self, use patch_py4 instead
         if logger is True:
             # use default logger:
@@ -169,6 +177,7 @@ class patch_py4:
                             err_type=type(e),
                             bare_exception=e,
                             renderer=getattr(patch_py4, "renderer", None),
+                            json_renderer=getattr(patch_py4, "json_renderer", None),
                         ),
                         status=500,
                     )
@@ -181,5 +190,6 @@ class patch_py4:
 
         # allows swapping renderer on the fly with tools.set_renderer():
         patch_py4.renderer = renderer
+        patch_py4.json_renderer = json_renderer
         _logger = getattr(patch_py4, "logger", None) or logger
         patch_py4.logger = staticmethod(_logger) if callable(_logger) else _logger

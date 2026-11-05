@@ -52,6 +52,7 @@ class DebugTools:
         debugbar_fancy_rendering: bool = True,
         debugbar_style: typing.Literal["bootstrap"] = "bootstrap",
         debugbar_slow_threshold_ms: int = 10,
+        errorpage_json_renderer: T_Renderer = None,
     ) -> None:
         """
         By default, on_off looks at PY4WEB_DEBUG_MODE in the env
@@ -73,7 +74,7 @@ class DebugTools:
 
         if enabled:
             if self.config.errorpage.enabled:
-                patch_py4(errorpage_renderer, error_logger)
+                patch_py4(errorpage_renderer, error_logger, json_renderer=errorpage_json_renderer)
 
             if self.config.debugbar.enabled:
                 if not db:

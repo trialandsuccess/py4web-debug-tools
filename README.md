@@ -80,9 +80,7 @@ You can modify your `py4web_uwsgi.py` file:
 # yes:
 from py4web_debug import wsgi
 
-application = wsgi(apps_folder="apps",
-                   password_file='password.txt',
-                   dashboard_mode="full")
+application = wsgi(apps_folder="apps", password_file="password.txt", dashboard_mode="full")
 ```
 
 After this, you can `tools.enable` as before.
