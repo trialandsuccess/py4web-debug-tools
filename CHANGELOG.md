@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.4.0 (2026-11-05)
+
+### Feature
+* **errorpage:** support custom JSON error rendering
+
 ## v1.3.4 (2026-08-06)
 
 ### Fix
